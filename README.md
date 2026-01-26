@@ -15,8 +15,8 @@ Answer questions like:
 Create a 1Password item:
 
 - Vault: `Claude API Access`
-- Item: `TfNSW Open Data API`
-- Field: `api_key`
+- Item: `Transport for NSW Open Data API Token`
+- Field: `token`
 
 This tool reads it at runtime.
 

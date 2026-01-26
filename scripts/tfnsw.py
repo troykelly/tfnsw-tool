@@ -52,7 +52,7 @@ def main(argv: list[str]) -> int:
     # Placeholder: just prove we can load the API key.
     api_key_ref = os.environ.get(
         "TFNSW_API_KEY_REF",
-        "op://Claude API Access/TfNSW Open Data API/api_key",
+        "op://Claude API Access/Transport for NSW Open Data API Token/token",
     )
 
     try:
@@ -60,7 +60,7 @@ def main(argv: list[str]) -> int:
     except Exception as e:
         print(
             "Missing/invalid TfNSW API key in 1Password.\n"
-            "Create: vault=Claude API Access, item=TfNSW Open Data API, field=api_key\n"
+            "Expected: vault=Claude API Access, item=Transport for NSW Open Data API Token, field=token\n"
             f"Tried reference: {api_key_ref}\n\n"
             f"Details: {e}",
             file=sys.stderr,
@@ -80,6 +80,7 @@ def main(argv: list[str]) -> int:
             },
             indent=2,
         )
+    )
     return 0
 
 
