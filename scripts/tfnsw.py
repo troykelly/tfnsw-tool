@@ -268,7 +268,7 @@ def main(argv: list[str]) -> int:
             },
         )
         # Return raw for now; we'll add formatting once we see real payloads.
-        print(json.dumps(dm, indent=2)[:200000])
+        print(json.dumps(dm, indent=2))
         return 0
 
     if args.cmd == "trip":
@@ -296,7 +296,7 @@ def main(argv: list[str]) -> int:
                 "itdTime": itdTime,
             },
         )
-        print(json.dumps(tr, indent=2)[:200000])
+        print(json.dumps(tr, indent=2))
         return 0
 
     print(json.dumps({"error": "unknown_cmd"}, indent=2))
