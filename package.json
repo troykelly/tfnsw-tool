@@ -1,0 +1,42 @@
+{
+  "name": "@troykelly/tfnsw",
+  "version": "1.0.0",
+  "description": "TfNSW Open Data CLI — stop finder, departures, trip planner",
+  "type": "module",
+  "bin": {
+    "tfnsw": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/cli.js",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "tfnsw",
+    "transport",
+    "nsw",
+    "cli",
+    "openclaw"
+  ],
+  "author": "Troy Kelly <troy@troykelly.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/troykelly/tfnsw-tool.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "SKILL.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "@types/node": "^25.3.0",
+    "typescript": "^5.9.3"
+  }
+}
