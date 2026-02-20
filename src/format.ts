@@ -1,34 +1,41 @@
-import type { TfNSWLocation } from "./api.js";
+import type {
+  TfNSWLocation,
+  TfNSWDepartureResponse,
+  TfNSWStopEvent,
+  TfNSWTripResponse,
+  TfNSWJourney,
+  TfNSWTripLeg,
+} from "./api.js";
 
 const TRANSPORT_ICONS: Record<string, string> = {
-  "1": "🚆",   // Train
-  "4": "🚈",   // Light rail
-  "5": "🚌",   // Bus
-  "7": "🚌",   // Coach
-  "9": "⛴️",   // Ferry
-  "11": "🚌",  // School bus
-  "99": "🚶",  // Walk
-  "100": "🚶", // Walk
+  "1": "\u{1F686}",   // Train
+  "2": "\u{1F687}",   // Metro
+  "4": "\u{1F688}",   // Light rail
+  "5": "\u{1F68C}",   // Bus
+  "7": "\u{1F68C}",   // Coach
+  "9": "\u26F4\uFE0F",   // Ferry
+  "11": "\u{1F68C}",  // School bus
+  "99": "\u{1F6B6}",  // Walk
+  "100": "\u{1F6B6}", // Walk
 };
 
 function icon(productClass?: string | number): string {
-  return TRANSPORT_ICONS[String(productClass)] ?? "🚏";
+  return TRANSPORT_ICONS[String(productClass)] ?? "\u{1F68F}";
 }
 
-function fmtTime(dateStr?: string, timeStr?: string): string {
-  if (!dateStr || !timeStr) return "??:??";
-  // TfNSW returns "HH:MM" or "H:MM"
-  return timeStr.length <= 5 ? timeStr : timeStr.slice(0, 5);
+function extractTime(isoString?: string): string {
+  if (!isoString) return "??:??";
+  // Extract HH:MM from ISO 8601 string like "2024-01-15T14:30:00+11:00"
+  const match = isoString.match(/T(\d{2}:\d{2})/);
+  return match ? match[1] : "??:??";
 }
 
-function minutesUntil(dateStr?: string, timeStr?: string): string {
-  if (!dateStr || !timeStr) return "";
+function minutesUntil(isoString?: string): string {
+  if (!isoString) return "";
   try {
-    // dateStr: "2024-01-15", timeStr: "14:30"
-    // TfNSW times are in AEST/AEDT
-    const parts = dateStr.split("-").map(Number);
-    const timeParts = timeStr.split(":").map(Number);
-    const dt = new Date(parts[0], parts[1] - 1, parts[2], timeParts[0], timeParts[1]);
+    // Parse the full ISO 8601 string directly — respects timezone offset
+    const dt = new Date(isoString);
+    if (isNaN(dt.getTime())) return "";
     const diff = Math.round((dt.getTime() - Date.now()) / 60000);
     if (diff <= 0) return "now";
     if (diff === 1) return "1 min";
@@ -40,25 +47,24 @@ function minutesUntil(dateStr?: string, timeStr?: string): string {
 
 export function formatLocation(loc: TfNSWLocation): string {
   const lines: string[] = [];
-  lines.push(`📍 ${loc.name ?? "Unknown"}`);
+  lines.push(`\u{1F4CD} ${loc.name ?? "Unknown"}`);
   if (loc.id) lines.push(`   ID: ${loc.id}`);
   if (loc.type) lines.push(`   Type: ${loc.type}`);
   if (Array.isArray(loc.coord) && loc.coord.length >= 2) {
     lines.push(`   Coords: ${loc.coord[0]}, ${loc.coord[1]}`);
   }
-  const parent = (loc as any).parent;
-  if (parent?.name) lines.push(`   Area: ${parent.name}`);
+  if (loc.parent?.name) lines.push(`   Area: ${loc.parent.name}`);
   return lines.join("\n");
 }
 
-export function formatDepartures(data: any): string {
+export function formatDepartures(data: TfNSWDepartureResponse): string {
   const events = data?.stopEvents;
   if (!Array.isArray(events) || events.length === 0) {
     return "No departures found.";
   }
 
   const stopName = events[0]?.location?.name ?? "Unknown Stop";
-  const lines: string[] = [`\n🚏 Departures from ${stopName}\n`];
+  const lines: string[] = [`\n\u{1F68F} Departures from ${stopName}\n`];
 
   for (const ev of events) {
     const transport = ev.transportation ?? {};
@@ -67,44 +73,40 @@ export function formatDepartures(data: any): string {
     const product = transport.product?.class;
     const emoji = icon(product);
 
-    const planned = ev.departureTimePlanned?.split("T") ?? [];
-    const estimated = ev.departureTimeEstimated?.split("T") ?? [];
+    const pTime = extractTime(ev.departureTimePlanned);
+    const eTime = extractTime(ev.departureTimeEstimated);
 
-    const pDate = planned[0];
-    const pTime = planned[1]?.slice(0, 5);
-    const eTime = estimated[1]?.slice(0, 5);
-
-    const timeDisplay = eTime && eTime !== pTime ? `${pTime} → ${eTime}` : pTime ?? "??:??";
-    const eta = minutesUntil(estimated[0] ?? pDate, eTime ?? pTime);
+    const timeDisplay = eTime !== "??:??" && eTime !== pTime ? `${pTime} \u2192 ${eTime}` : pTime;
+    const eta = minutesUntil(ev.departureTimeEstimated ?? ev.departureTimePlanned);
     const etaStr = eta ? ` (${eta})` : "";
 
     // Platform info
     const platform = ev.location?.properties?.platform ?? "";
     const platStr = platform ? ` [Plt ${platform}]` : "";
 
-    lines.push(`${emoji} ${line} → ${dest}  ${timeDisplay}${etaStr}${platStr}`);
+    lines.push(`${emoji} ${line} \u2192 ${dest}  ${timeDisplay}${etaStr}${platStr}`);
   }
 
   return lines.join("\n");
 }
 
-export function formatTrip(data: any): string {
+export function formatTrip(data: TfNSWTripResponse): string {
   const journeys = data?.journeys;
   if (!Array.isArray(journeys) || journeys.length === 0) {
     return "No trips found.";
   }
 
-  const lines: string[] = ["\n🗺️ Trip Options\n"];
+  const lines: string[] = ["\n\u{1F5FA}\uFE0F Trip Options\n"];
 
   for (let i = 0; i < journeys.length; i++) {
-    const j = journeys[i];
+    const j: TfNSWJourney = journeys[i];
     const legs = j.legs ?? [];
     if (legs.length === 0) continue;
 
     const firstLeg = legs[0];
     const lastLeg = legs[legs.length - 1];
-    const depTime = firstLeg.origin?.departureTimePlanned?.split("T")[1]?.slice(0, 5) ?? "??:??";
-    const arrTime = lastLeg.destination?.arrivalTimePlanned?.split("T")[1]?.slice(0, 5) ?? "??:??";
+    const depTime = extractTime(firstLeg.origin?.departureTimePlanned);
+    const arrTime = extractTime(lastLeg.destination?.arrivalTimePlanned);
 
     // Duration
     const durationMin = j.duration ? Math.round(j.duration / 60) : null;
@@ -114,7 +116,7 @@ export function formatTrip(data: any): string {
     const fare = j.fare?.tickets?.[0];
     const fareStr = fare?.properties?.priceBrutto ? ` $${(Number(fare.properties.priceBrutto) / 100).toFixed(2)}` : "";
 
-    lines.push(`--- Option ${i + 1}: ${depTime} → ${arrTime}${durStr}${fareStr} ---`);
+    lines.push(`--- Option ${i + 1}: ${depTime} \u2192 ${arrTime}${durStr}${fareStr} ---`);
 
     for (const leg of legs) {
       const transport = leg.transportation ?? {};
@@ -123,11 +125,11 @@ export function formatTrip(data: any): string {
       const lineName = transport.number ?? transport.disassembledName ?? "Walk";
       const from = leg.origin?.name ?? "??";
       const to = leg.destination?.name ?? "??";
-      const legDep = leg.origin?.departureTimePlanned?.split("T")[1]?.slice(0, 5) ?? "";
-      const legArr = leg.destination?.arrivalTimePlanned?.split("T")[1]?.slice(0, 5) ?? "";
+      const legDep = extractTime(leg.origin?.departureTimePlanned);
+      const legArr = extractTime(leg.destination?.arrivalTimePlanned);
       const stops = leg.stopSequence?.length ? ` (${leg.stopSequence.length - 1} stops)` : "";
 
-      lines.push(`  ${emoji} ${legDep} ${lineName}: ${from} → ${to} arr ${legArr}${stops}`);
+      lines.push(`  ${emoji} ${legDep} ${lineName}: ${from} \u2192 ${to} arr ${legArr}${stops}`);
     }
     lines.push("");
   }

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { parseArgs } from "node:util";
 import { getApiKey, resolveLocation, tfnswGet } from "./api.js";
+import type { TfNSWDepartureResponse, TfNSWTripResponse } from "./api.js";
 import { formatLocation, formatDepartures, formatTrip } from "./format.js";
 
 const HELP = `tfnsw - TfNSW Open Data CLI
@@ -17,6 +17,7 @@ Usage:
 Environment:
   TFNSW_API_KEY          API key (or uses 1Password)
   TFNSW_API_KEY_REF      1Password reference
+  TFNSW_API_BASE         TfNSW API base URL override
   HA_BASE_URL            Home Assistant URL
   HA_TOKEN / HA_TOKEN_FILE  Home Assistant auth
 `;
@@ -36,8 +37,8 @@ async function main(): Promise<number> {
   let apiKey: string;
   try {
     apiKey = getApiKey();
-  } catch (e: any) {
-    console.error(e.message);
+  } catch (e: unknown) {
+    console.error(e instanceof Error ? e.message : String(e));
     return 2;
   }
 
@@ -87,7 +88,7 @@ async function main(): Promise<number> {
       itdTime,
       departureMonitorMacro: "true",
       TfNSWDM: "true",
-    });
+    }) as TfNSWDepartureResponse;
 
     // Limit results
     if (dm.stopEvents && Array.isArray(dm.stopEvents)) {
@@ -115,7 +116,7 @@ async function main(): Promise<number> {
       name_destination: String(dest.id),
       itdDate,
       itdTime,
-    });
+    }) as TfNSWTripResponse;
 
     console.log(jsonOutput ? JSON.stringify(tr, null, 2) : formatTrip(tr));
     return 0;
@@ -125,7 +126,7 @@ async function main(): Promise<number> {
   return 2;
 }
 
-main().then(process.exit).catch((e) => {
-  console.error(e.message ?? e);
+main().then(process.exit).catch((e: unknown) => {
+  console.error(e instanceof Error ? e.message : String(e));
   process.exit(1);
 });

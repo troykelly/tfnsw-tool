@@ -36,15 +36,27 @@ tfnsw departures "Central" --json
 Set `TFNSW_API_KEY` environment variable, or configure 1Password CLI with `OP_SERVICE_ACCOUNT_TOKEN`.
 The tool reads the API key from 1Password vault "Claude API Access", item "Transport for NSW Open Data API Token".
 
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `TFNSW_API_KEY` | TfNSW API key (direct) | — |
+| `TFNSW_API_KEY_REF` | 1Password secret reference | `op://Claude API Access/Transport for NSW Open Data API Token/token` |
+| `TFNSW_API_BASE` | TfNSW API base URL override | `https://api.transport.nsw.gov.au/v1/tp` |
+
 ## Home Assistant Integration
 
 Person entity lookups (e.g. `person.troy`) resolve location via Home Assistant.
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `HA_BASE_URL` | Home Assistant URL | `https://cp.mctk.co` |
-| `HA_TOKEN` | Long-lived access token | — |
-| `HA_TOKEN_FILE` | Path to token file | `/home/moltbot/.ha_sy3_long_lived_token` |
+**All Home Assistant variables must be set explicitly — there are no defaults.**
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `HA_BASE_URL` | Home Assistant URL (e.g. `https://your-ha-instance.local`) | Yes, for person entity lookups |
+| `HA_TOKEN` | Long-lived access token | One of `HA_TOKEN` or `HA_TOKEN_FILE` |
+| `HA_TOKEN_FILE` | Path to file containing token | One of `HA_TOKEN` or `HA_TOKEN_FILE` |
+
+If HA is not configured and a `person.*` entity is used, the CLI will return a clear error explaining which variables to set.
 
 ## Development
 

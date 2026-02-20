@@ -1,6 +1,6 @@
 {
   "name": "@troykelly/tfnsw",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "TfNSW Open Data CLI — stop finder, departures, trip planner",
   "type": "module",
   "bin": {
