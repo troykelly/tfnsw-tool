@@ -86,7 +86,8 @@ async function main(): Promise<number> {
       name_dm: String(loc.id),
       itdDate,
       itdTime,
-      departureMonitorMacro: "true",
+      depType: "stopEvents",
+      mode: "direct",
       TfNSWDM: "true",
     }) as TfNSWDepartureResponse;
 
