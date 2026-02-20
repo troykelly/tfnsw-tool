@@ -90,6 +90,15 @@ export function getApiKey(): string {
   // Direct env var first
   if (process.env.TFNSW_API_KEY) return process.env.TFNSW_API_KEY;
 
+  // Support OP_SERVICE_ACCOUNT_TOKEN_FILE (reads token from file for op CLI auth)
+  if (!process.env.OP_SERVICE_ACCOUNT_TOKEN && process.env.OP_SERVICE_ACCOUNT_TOKEN_FILE) {
+    try {
+      process.env.OP_SERVICE_ACCOUNT_TOKEN = readFileSync(process.env.OP_SERVICE_ACCOUNT_TOKEN_FILE, "utf-8").trim();
+    } catch {
+      // Ignore — op will fail below with a clear error
+    }
+  }
+
   // 1Password reference
   const ref = process.env.TFNSW_API_KEY_REF ?? "op://Claude API Access/Transport for NSW Open Data API Token/token";
   try {
